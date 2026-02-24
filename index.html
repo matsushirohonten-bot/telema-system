@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>テレマシステム（自作版）モックアップ</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Meiryo', 'メイリオ', sans-serif; background: #e8eaf0; color: #222; font-size: 13px; }
+
+/* ===== 共通 ===== */
+.hidden { display: none !important; }
+button { cursor: pointer; font-family: inherit; }
+
+/* ===== ログイン ===== */
+#screen-login {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #1c4e8a 0%, #0a2d5e 100%);
+}
+.login-box {
+  background: #fff; border-radius: 10px; padding: 44px 40px 36px;
+  width: 360px; box-shadow: 0 6px 28px rgba(0,0,0,0.3); text-align: center;
+}
+.login-box .logo { font-size: 22px; font-weight: bold; color: #1c4e8a; margin-bottom: 4px; }
+.login-box .logo span { font-size: 12px; display: block; color: #888; margin-top: 2px; font-weight: normal; }
+.login-box .role-badge {
+  display: inline-block; margin: 14px 0 24px;
+  background: #e8f0fe; color: #1c4e8a; border-radius: 20px;
+  padding: 4px 16px; font-size: 12px; font-weight: bold;
+}
+.login-box input {
+  width: 100%; padding: 11px 13px; margin-bottom: 12px;
+  border: 1px solid #ccc; border-radius: 5px; font-size: 14px;
+  font-family: inherit;
+}
+.login-box input:focus { outline: none; border-color: #1c4e8a; }
+.login-box .btn-login {
+  width: 100%; padding: 12px; background: #1c4e8a; color: #fff;
+  border: none; border-radius: 5px; font-size: 15px; font-weight: bold;
+  margin-top: 4px;
+}
+.login-box .btn-login:hover { background: #153d70; }
+.login-hint {
+  margin-top: 20px; font-size: 11px; color: #aaa; line-height: 1.8;
+  border-top: 1px solid #f0f0f0; padding-top: 14px; text-align: left;
+}
+
+/* ===== ヘッダー ===== */
+.sys-header {
+  background: #1c4e8a; color: #fff; height: 46px;
+  display: flex; align-items: center; padding: 0 14px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+.sys-header .sys-title { font-size: 15px; font-weight: bold; flex: 1; letter-spacing: 1px; }
+.sys-header .header-right { display: flex; align-items: center; gap: 12px; font-size: 12px; }
+.sys-header .op-name { opacity: 0.9; }
+.sys-header .btn-logout {
+  background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.4);
+  padding: 4px 12px; border-radius: 4px; font-size: 12px;
+}
+.sys-header .btn-logout:hover { background: rgba(255,255,255,0.3); }
+
+/* ===== 上部タブバー ===== */
+.tab-bar {
+  background: #f5f5f5; border-bottom: 2px solid #d0d0d0;
+  display: flex; padding: 0 12px;
+}
+.tab-item {
+  padding: 9px 18px; cursor: pointer; font-size: 13px; font-weight: bold;
+  color: #666; border-bottom: 3px solid transparent; margin-bottom: -2px;
+}
+.tab-item:hover { background: #eaefff; color: #1c4e8a; }
+.tab-item.active { color: #1c4e8a; border-bottom-color: #1c4e8a; background: #fff; }
+
+/* ===== オペレーター架電画面 ===== */
+#screen-operator { display: none; flex-direction: column; min-height: 100vh; }
+
+.op-layout {
+  display: flex; flex: 1;
+  height: calc(100vh - 90px);
+}
+
+/* 左カラム：リスト一覧 */
+.list-col {
+  width: 270px; background: #fff; border-right: 1px solid #ccc;
+  display: flex; flex-direction: column; flex-shrink: 0;
+}
+.list-col-header {
+  background: #1c4e8a; color: #fff; padding: 8px 12px;
+  font-size: 12px; font-weight: bold; display: flex; justify-content: space-between;
+}
+.list-select-wrap { padding: 8px 10px; border-bottom: 1px solid #e0e0e0; }
+.list-select-wrap select {
+  width: 100%; padding: 6px 8px; border: 1px solid #ccc;
+  border-radius: 4px; font-size: 12px; font-family: inherit;
+}
+.list-stats-bar {
+  background: #eef3ff; padding: 6px 10px; border-bottom: 1px solid #c8d4f0;
+  display: flex; gap: 14px; font-size: 11px; color: #1c4e8a;
+}
+.list-stats-bar b { font-size: 14px; }
+.customer-list { overflow-y: auto; flex: 1; }
+.cust-row {
+  padding: 8px 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer;
+}
+.cust-row:hover { background: #f0f5ff; }
+.cust-row.active { background: #dde8ff; border-left: 3px solid #1c4e8a; padding-left: 9px; }
+.cust-row .cr-name { font-size: 12px; font-weight: bold; }
+.cust-row .cr-tel  { font-size: 11px; color: #777; margin-top: 1px; }
+.cust-row .cr-tags { margin-top: 3px; display: flex; gap: 3px; flex-wrap: wrap; }
+.tag {
+  font-size: 10px; padding: 1px 6px; border-radius: 10px;
+}
+.tag-new      { background: #e0f4e7; color: #2e7d32; }
+.tag-absent   { background: #fff3e0; color: #e65100; }
+.tag-sample   { background: #e3f2fd; color: #1565c0; }
+.tag-ng       { background: #fce4ec; color: #c62828; }
+.tag-claim    { background: #f3e5f5; color: #6a1b9a; }
+.tag-contract { background: #e8f5e9; color: #1b5e20; }
+
+/* 中央カラム：架電メイン */
+.call-col {
+  flex: 1; background: #f2f4f8; overflow-y: auto;
+  display: flex; flex-direction: column; padding: 10px;
+  gap: 8px;
+}
+
+/* 情報共有ウィンドウ（上部速報） */
+.info-share-bar {
+  background: #1c4e8a; color: #fff; padding: 5px 14px;
+  font-size: 12px; display: flex; align-items: center; gap: 10px;
+  border-radius: 4px;
+}
+.info-share-bar .share-label { opacity: 0.7; white-space: nowrap; }
+.info-share-bar .share-scroll { flex: 1; overflow: hidden; }
+.share-item { color: #7ecbff; font-weight: bold; }
+
+/* 発信コントロールパネル */
+.call-ctrl-panel {
+  background: #fff; border: 1px solid #c0c8d8; border-radius: 6px;
+  padding: 10px 14px; display: flex; align-items: center; gap: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.phone-status-box {
+  border: 1px solid #ccc; border-radius: 4px; padding: 5px 12px;
+  font-size: 11px; text-align: center; min-width: 110px;
+  background: #f8f8f8;
+}
+.phone-status-box .tel-small { color: #555; font-size: 10px; }
+.phone-status-box .status-label {
+  font-weight: bold; font-size: 13px; color: #1c4e8a; margin-top: 2px;
+}
+.btn-dial {
+  background: #2e7d32; color: #fff; border: none;
+  padding: 10px 22px; border-radius: 5px; font-size: 14px; font-weight: bold;
+  letter-spacing: 1px;
+}
+.btn-dial:hover { background: #1b5e20; }
+.btn-hangup {
+  background: #c62828; color: #fff; border: none;
+  padding: 10px 22px; border-radius: 5px; font-size: 14px; font-weight: bold;
+  letter-spacing: 1px;
+}
+.btn-hangup:hover { background: #8b0000; }
+.btn-register {
+  background: #e0e0e0; color: #555; border: none;
+  padding: 6px 14px; border-radius: 4px; font-size: 12px;
+}
+.auto-call-wrap { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #555; }
+.ctrl-spacer { flex: 1; }
+.btn-skip {
+  background: #78909c; color: #fff; border: none;
+  padding: 8px 14px; border-radius: 4px; font-size: 12px; font-weight: bold;
+}
+.btn-skip:hover { background: #546e7a; }
+
+/* 顧客情報パネル */
+.cust-info-panel {
+  background: #fff; border: 1px solid #c0c8d8; border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.cust-info-top {
+  background: #eef2fa; border-bottom: 1px solid #c0c8d8;
+  padding: 8px 14px; display: flex; align-items: center; justify-content: space-between;
+  border-radius: 6px 6px 0 0;
+}
+.cust-info-top .update-info { font-size: 11px; color: #888; }
+.cust-info-body { padding: 10px 14px; }
+.cust-grid {
+  display: grid; grid-template-columns: 120px 1fr 120px 1fr;
+  gap: 0; border: 1px solid #ddd; border-radius: 4px; overflow: hidden;
+}
+.cust-cell-label {
+  background: #f0f2f8; padding: 6px 10px; font-size: 11px;
+  color: #555; border-right: 1px solid #ddd; border-bottom: 1px solid #ddd;
+  font-weight: bold; display: flex; align-items: center;
+}
+.cust-cell-value {
+  padding: 6px 10px; font-size: 12px; border-right: 1px solid #ddd;
+  border-bottom: 1px solid #ddd; background: #fff;
+}
+.cust-cell-value.tel-value {
+  font-size: 18px; font-weight: bold; color: #1c4e8a; letter-spacing: 1px;
+}
+.cust-cell-value:nth-last-child(-n+4) { border-bottom: none; }
+
+/* ステータスパネル */
+.status-panel {
+  background: #fff; border: 1px solid #c0c8d8; border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.panel-header {
+  background: #f0f2f8; border-bottom: 1px solid #c0c8d8; padding: 7px 14px;
+  font-size: 12px; font-weight: bold; color: #333; border-radius: 6px 6px 0 0;
+  display: flex; align-items: center; gap: 8px;
+}
+.panel-header .ph-dot { width: 8px; height: 8px; border-radius: 50%; background: #1c4e8a; }
+.status-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 6px; padding: 10px 12px;
+}
+.status-btn {
+  padding: 10px 4px; border: 2px solid #e0e0e0; border-radius: 5px;
+  background: #fff; font-size: 11px; font-weight: bold; text-align: center;
+  color: #444; transition: all 0.15s;
+}
+.status-btn:hover { border-color: #1c4e8a; color: #1c4e8a; background: #eef2ff; }
+.status-btn.selected { border-color: #1c4e8a; background: #1c4e8a; color: #fff; }
+.status-btn.s-sample   { border-color: #1565c0; color: #1565c0; }
+.status-btn.s-sample:hover, .status-btn.s-sample.selected { background: #1565c0; color: #fff; }
+.status-btn.s-contract { border-color: #2e7d32; color: #2e7d32; }
+.status-btn.s-contract:hover, .status-btn.s-contract.selected { background: #2e7d32; color: #fff; }
+.status-btn.s-ng       { border-color: #c62828; color: #c62828; }
+.status-btn.s-ng:hover, .status-btn.s-ng.selected { background: #c62828; color: #fff; }
+.status-btn.s-claim    { border-color: #6a1b9a; color: #6a1b9a; }
+.status-btn.s-claim:hover, .status-btn.s-claim.selected { background: #6a1b9a; color: #fff; }
+.status-btn.s-absent   { border-color: #e65100; color: #e65100; }
+.status-btn.s-absent:hover, .status-btn.s-absent.selected { background: #e65100; color: #fff; }
+.status-btn.s-req      { border-color: #f57c00; color: #f57c00; }
+.status-btn.s-req:hover, .status-btn.s-req.selected { background: #f57c00; color: #fff; }
+
+/* メモパネル */
+.memo-panel {
+  background: #fff; border: 1px solid #c0c8d8; border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.memo-quick-btns { padding: 6px 12px; display: flex; gap: 5px; flex-wrap: wrap; }
+.memo-qbtn {
+  padding: 4px 10px; border: 1px solid #b0b8cc; border-radius: 3px;
+  background: #f5f7ff; color: #445; font-size: 11px;
+}
+.memo-qbtn:hover { background: #e0e5f5; }
+.memo-textarea-wrap { padding: 0 12px 10px; }
+.memo-textarea-wrap textarea {
+  width: 100%; height: 70px; padding: 8px; border: 1px solid #ccc;
+  border-radius: 4px; font-size: 12px; resize: vertical; font-family: inherit;
+}
+.memo-textarea-wrap textarea:focus { outline: none; border-color: #1c4e8a; }
+
+/* 情報2 / リサーチ2 サブパネル */
+.info2-tabs { display: flex; border-bottom: 1px solid #c0c8d8; padding: 0 12px; }
+.info2-tab {
+  padding: 6px 14px; font-size: 11px; cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -1px; color: #888;
+}
+.info2-tab.active { color: #1c4e8a; border-bottom-color: #1c4e8a; font-weight: bold; }
+.info2-body { padding: 8px 12px; font-size: 12px; }
+.info2-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.info2-row label { width: 90px; color: #666; font-size: 11px; }
+.info2-row input, .info2-row select {
+  padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px;
+  font-size: 12px; font-family: inherit; flex: 1;
+}
+
+/* 次へボタンエリア */
+.next-area {
+  background: #eef2fa; border: 1px solid #c0c8d8; border-radius: 6px;
+  padding: 10px 14px; display: flex; align-items: center; gap: 12px;
+}
+.btn-next-set {
+  background: #1c4e8a; color: #fff; border: none;
+  padding: 10px 24px; border-radius: 5px; font-size: 13px; font-weight: bold;
+}
+.btn-next-set:hover { background: #153d70; }
+.btn-save-only {
+  background: #546e7a; color: #fff; border: none;
+  padding: 10px 18px; border-radius: 5px; font-size: 13px;
+}
+.btn-save-only:hover { background: #37474f; }
+
+/* 架電履歴パネル */
+.history-panel {
+  background: #fff; border: 1px solid #c0c8d8; border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.hist-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.hist-table th {
+  background: #f0f2f8; padding: 6px 10px; text-align: left;
+  border-bottom: 1px solid #d0d0d0; color: #555; white-space: nowrap;
+}
+.hist-table td { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; color: #444; }
+.hist-table tr:last-child td { border-bottom: none; }
+
+/* 右カラム：トークスクリプト */
+.script-col {
+  width: 240px; background: #fff; border-left: 1px solid #ccc;
+  display: flex; flex-direction: column; flex-shrink: 0;
+}
+.script-col-header {
+  background: #3d5a80; color: #fff; padding: 8px 12px;
+  font-size: 12px; font-weight: bold;
+}
+.script-body { overflow-y: auto; flex: 1; padding: 8px; }
+.script-step {
+  margin-bottom: 8px; border-radius: 5px; overflow: hidden;
+  border: 1px solid #e0e0e0;
+}
+.script-step.active { border-color: #1c4e8a; }
+.script-step-head {
+  background: #f0f2f8; padding: 5px 10px; font-size: 10px;
+  font-weight: bold; color: #666; border-bottom: 1px solid #e0e0e0;
+}
+.script-step.active .script-step-head { background: #1c4e8a; color: #fff; border-bottom-color: #153d70; }
+.script-step-body { padding: 7px 10px; font-size: 11px; color: #444; line-height: 1.65; }
+.script-step.active .script-step-body { color: #1a1a1a; font-weight: 500; background: #f5f8ff; }
+
+/* ===== 管理者画面 ===== */
+#screen-admin { display: none; flex-direction: column; min-height: 100vh; }
+.admin-layout { display: flex; flex: 1; min-height: calc(100vh - 90px); }
+
+/* 管理者左サイドバー */
+.admin-sidebar {
+  width: 180px; background: #1c4e8a; flex-shrink: 0;
+  display: flex; flex-direction: column; padding-top: 8px;
+}
+.sidebar-section { padding: 8px 12px 4px; font-size: 10px; color: rgba(255,255,255,0.5); font-weight: bold; }
+.sidebar-item {
+  padding: 9px 16px; font-size: 12px; color: rgba(255,255,255,0.85);
+  cursor: pointer; border-left: 3px solid transparent;
+}
+.sidebar-item:hover { background: rgba(255,255,255,0.1); }
+.sidebar-item.active { background: rgba(255,255,255,0.15); border-left-color: #7ecbff; color: #fff; }
+
+/* 管理者コンテンツ */
+.admin-content { flex: 1; padding: 16px; overflow-y: auto; background: #f0f2f6; }
+.admin-panel {
+  background: #fff; border: 1px solid #d0d4dc; border-radius: 6px;
+  margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+.admin-panel-header {
+  background: #f0f2f8; border-bottom: 1px solid #d0d4dc; padding: 10px 16px;
+  font-size: 13px; font-weight: bold; color: #1c4e8a; border-radius: 6px 6px 0 0;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.admin-panel-body { padding: 14px 16px; }
+
+/* ダッシュボードカード */
+.dash-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 16px; }
+.dash-card { background: #fff; border: 1px solid #d0d4dc; border-radius: 6px; padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+.dash-card .dc-label { font-size: 11px; color: #888; }
+.dash-card .dc-num   { font-size: 28px; font-weight: bold; margin-top: 4px; }
+.dash-card .dc-sub   { font-size: 11px; color: #aaa; margin-top: 3px; }
+
+/* テーブル */
+.admin-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.admin-table th {
+  background: #f0f2f8; padding: 8px 12px; text-align: left;
+  border-bottom: 2px solid #d0d4dc; color: #555; white-space: nowrap;
+}
+.admin-table td { padding: 8px 12px; border-bottom: 1px solid #eee; vertical-align: middle; }
+.admin-table tr:hover td { background: #f8f9ff; }
+.progress-wrap { background: #e0e0e0; border-radius: 3px; height: 7px; min-width: 70px; }
+.progress-fill { height: 7px; border-radius: 3px; background: #1c4e8a; }
+.progress-fill.green { background: #2e7d32; }
+.progress-fill.orange { background: #e65100; }
+
+.btn-sm {
+  padding: 4px 10px; border-radius: 3px; font-size: 11px; border: none;
+  font-family: inherit; cursor: pointer; margin-right: 3px;
+}
+.btn-blue   { background: #1c4e8a; color: #fff; }
+.btn-blue:hover { background: #153d70; }
+.btn-orange { background: #e65100; color: #fff; }
+.btn-orange:hover { background: #bf360c; }
+.btn-gray   { background: #78909c; color: #fff; }
+.btn-gray:hover { background: #546e7a; }
+.btn-green  { background: #2e7d32; color: #fff; }
+.btn-green:hover { background: #1b5e20; }
+
+/* モニタリング */
+.monitor-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+.monitor-op-card {
+  border: 1px solid #d0d4dc; border-radius: 5px; padding: 10px;
+  background: #fafbff;
+}
+.monitor-op-card .mop-name { font-size: 13px; font-weight: bold; color: #1c4e8a; }
+.monitor-op-card .mop-status { font-size: 11px; margin: 3px 0 8px; }
+.monitor-op-card .mop-status.online { color: #2e7d32; }
+.monitor-op-card .mop-status.offline { color: #aaa; }
+.mop-stats { display: flex; gap: 10px; }
+.mop-stat { text-align: center; }
+.mop-stat .n { font-size: 17px; font-weight: bold; color: #1c4e8a; }
+.mop-stat .l { font-size: 10px; color: #aaa; }
+
+/* トースト */
+.toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: #333; color: #fff; padding: 10px 22px; border-radius: 5px;
+  font-size: 13px; z-index: 999; animation: fadeUp 0.3s;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* モーダル */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center; z-index: 500;
+}
+.modal-box {
+  background: #fff; border-radius: 8px; padding: 24px 28px;
+  min-width: 380px; max-width: 480px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+}
+.modal-box h3 { font-size: 15px; margin-bottom: 14px; color: #1c4e8a; }
+.modal-box p  { font-size: 13px; color: #555; line-height: 1.7; margin-bottom: 16px; }
+.modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+.form-row { margin-bottom: 12px; }
+.form-row label { display: block; font-size: 11px; color: #666; margin-bottom: 4px; font-weight: bold; }
+.form-row input, .form-row select, .form-row textarea {
+  width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px;
+  font-size: 13px; font-family: inherit;
+}
+.form-row input:focus { outline: none; border-color: #1c4e8a; }
+
+@media (max-width: 900px) {
+  .script-col { display: none; }
+  .list-col { width: 220px; }
+  .dash-grid { grid-template-columns: repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- ========================================================
+     ログイン画面
+======================================================== -->
+<div id="screen-login">
+  <div class="login-box">
+    <div class="logo">
+      📞 テレマシステム
+      <span>自作版 v1.0</span>
+    </div>
+    <div class="role-badge" id="login-role-badge">オペレーターログイン</div>
+    <input type="text"     id="login-id" placeholder="ログインID"   value="operator" />
+    <input type="password" id="login-pw" placeholder="パスワード"    value="1234" />
+    <button class="btn-login" onclick="doLogin()">ログイン</button>
+    <div class="login-hint">
+      ▼ デモ用アカウント<br>
+      管理者：<b>admin</b> / <b>1234</b>　→　管理者画面<br>
+      OP：<b>operator</b> / <b>1234</b>　→　架電（オペレーター）画面
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================
+     オペレーター架電画面
+======================================================== -->
+<div id="screen-operator">
+  <!-- ヘッダー -->
+  <div class="sys-header">
+    <div class="sys-title">📞 テレマシステム</div>
+    <div class="header-right">
+      <span class="op-name">👤 田中 花子（オペレーター）</span>
+      <button class="btn-logout" onclick="showScreen('login')">ログアウト</button>
+    </div>
+  </div>
+  <!-- タブ -->
+  <div class="tab-bar">
+    <div class="tab-item active" onclick="opTab(this,'op-call')">架電</div>
+    <div class="tab-item" onclick="opTab(this,'op-mylist')">マイリスト</div>
+    <div class="tab-item" onclick="opTab(this,'op-personal')">個人分析</div>
+  </div>
+
+  <!-- ===== 架電タブ ===== -->
+  <div id="op-call" class="op-layout">
+
+    <!-- 左：顧客リスト -->
+    <div class="list-col">
+      <div class="list-col-header">
+        <span>架電リスト</span>
+        <span style="font-size:10px;opacity:0.7;cursor:pointer">絞込▼</span>
+      </div>
+      <div class="list-select-wrap">
+        <select onchange="changeList(this)">
+          <option value="A">Aリスト（宅配エリア）</option>
+          <option value="B">Bリスト（新規開拓_山口市）</option>
+          <option value="C">Cリスト（既存フォロー）</option>
+        </select>
+      </div>
+      <div class="list-stats-bar" id="list-stats">
+        残：<b id="s-remain">47</b>件　架電済：<b id="s-done">23</b>件　APT：<b id="s-apt">3</b>
+      </div>
+      <div class="customer-list" id="customer-list">
+        <!-- JS で生成 -->
+      </div>
+    </div>
+
+    <!-- 中央：架電メイン -->
+    <div class="call-col" id="op-call-main">
+
+      <!-- 情報共有 -->
+      <div class="info-share-bar">
+        <span class="share-label">【速報】</span>
+        <div class="share-scroll">
+          <span class="share-item" id="share-scroll-text">鈴木オペレーター：サンプル獲得！　田中オペレーター：成約1件！</span>
+        </div>
+      </div>
+
+      <!-- 発信コントロール -->
+      <div class="call-ctrl-panel">
+        <div class="phone-status-box">
+          <div class="tel-small" id="ctrl-tel">083-920-XXXX</div>
+          <div class="status-label" id="ctrl-status">許可</div>
+        </div>
+        <button class="btn-dial" onclick="startCall()">📞 発信</button>
+        <button class="btn-hangup" onclick="endCall()">📵 終話</button>
+        <button class="btn-register" onclick="showToast('登録処理しました')">Register</button>
+        <div class="auto-call-wrap">
+          <input type="checkbox" id="auto-call" />
+          <label for="auto-call">自動発信</label>
+        </div>
+        <div class="ctrl-spacer"></div>
+        <button class="btn-skip" onclick="nextCust()" title="次の顧客へスキップ">＞ スキップ</button>
+      </div>
+
+      <!-- 顧客情報 -->
+      <div class="cust-info-panel">
+        <div class="cust-info-top">
+          <span style="font-weight:bold;font-size:13px;">顧客情報</span>
+          <span class="update-info">更新日（最終架電日）：<b id="last-call-date">-</b></span>
+        </div>
+        <div class="cust-info-body">
+          <div class="cust-grid">
+            <div class="cust-cell-label">会社名・氏名</div>
+            <div class="cust-cell-value" id="ci-name" style="font-weight:bold;font-size:14px;"></div>
+            <div class="cust-cell-label">店舗名 / リスト名</div>
+            <div class="cust-cell-value" id="ci-list"></div>
+
+            <div class="cust-cell-label">電話番号①</div>
+            <div class="cust-cell-value tel-value" id="ci-tel"></div>
+            <div class="cust-cell-label">電話番号②</div>
+            <div class="cust-cell-value" id="ci-tel2">-</div>
+
+            <div class="cust-cell-label">担当者</div>
+            <div class="cust-cell-value" id="ci-contact"></div>
+            <div class="cust-cell-label">顧客コード</div>
+            <div class="cust-cell-value" id="ci-code"></div>
+
+            <div class="cust-cell-label">住所</div>
+            <div class="cust-cell-value" id="ci-address" style="grid-column:span 1"></div>
+            <div class="cust-cell-label">エリア</div>
+            <div class="cust-cell-value" id="ci-area"></div>
+          </div>
+        </div>
+        <!-- 情報2 / リサーチ2 -->
+        <div class="info2-tabs">
+          <div class="info2-tab active" onclick="info2tab(this,'i2-main')">基本情報</div>
+          <div class="info2-tab" onclick="info2tab(this,'i2-order')">情報2（お届け）</div>
+          <div class="info2-tab" onclick="info2tab(this,'i2-research')">リサーチ2</div>
+        </div>
+        <div id="i2-main" class="info2-body">
+          <div class="info2-row">
+            <label>架電回数</label>
+            <span id="ci-calls" style="font-weight:bold;color:#1c4e8a;"></span>回
+          </div>
+          <div class="info2-row">
+            <label>現ステータス</label>
+            <span id="ci-status" style="font-weight:bold;"></span>
+          </div>
+        </div>
+        <div id="i2-order" class="info2-body hidden">
+          <div class="info2-row"><label>お届け日（8桁）</label><input type="text" placeholder="例：20260301" /></div>
+          <div class="info2-row"><label>お届け商品</label>
+            <select><option>-</option><option>宅配Aセット</option><option>宅配Bセット</option><option>特別商品</option></select>
+          </div>
+        </div>
+        <div id="i2-research" class="info2-body hidden">
+          <div class="info2-row"><label>競合他社</label>
+            <select><option>-</option><option>他社Aを利用</option><option>他社Bを利用</option><option>利用なし</option></select>
+          </div>
+          <div class="info2-row"><label>ニーズ有無</label>
+            <select><option>-</option><option>あり</option><option>なし</option><option>不明</option></select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ステータス選択 -->
+      <div class="status-panel">
+        <div class="panel-header"><div class="ph-dot"></div>ステータス選択（架電結果）</div>
+        <div class="status-grid">
+          <button class="status-btn s-sample"   onclick="selectStatus(this,'サンプル')">サンプル<br>受注</button>
+          <button class="status-btn s-contract" onclick="selectStatus(this,'成約')">成約</button>
+          <button class="status-btn s-ng"       onclick="selectStatus(this,'クロージングNG')">クロ<br>ジングNG</button>
+          <button class="status-btn s-absent"   onclick="selectStatus(this,'不在1回目')">不在<br>1回目</button>
+          <button class="status-btn s-absent"   onclick="selectStatus(this,'不在2回目')">不在<br>2回目</button>
+          <button class="status-btn s-absent"   onclick="selectStatus(this,'不在3回目')">不在<br>3回目</button>
+          <button class="status-btn"            onclick="selectStatus(this,'不通')">不通</button>
+          <button class="status-btn s-ng"       onclick="selectStatus(this,'不要')">不要</button>
+          <button class="status-btn s-claim"    onclick="selectStatus(this,'クレーム')">クレーム</button>
+          <button class="status-btn s-req"      onclick="selectStatus(this,'要対応')">要対応</button>
+        </div>
+      </div>
+
+      <!-- メモ -->
+      <div class="memo-panel">
+        <div class="panel-header"><div class="ph-dot"></div>メモ記入欄</div>
+        <div class="memo-quick-btns">
+          <button class="memo-qbtn" onclick="insertMemo('date')">日付入力</button>
+          <button class="memo-qbtn" onclick="insertMemo('op')">担当名入力</button>
+          <button class="memo-qbtn" onclick="insertMemo('c1')">Cメモ1</button>
+          <button class="memo-qbtn" onclick="insertMemo('c2')">Cメモ2</button>
+          <button class="memo-qbtn" onclick="insertMemo('c3')">Cメモ3</button>
+          <button class="memo-qbtn" onclick="insertMemo('c4')">Cメモ4</button>
+          <button class="memo-qbtn" style="color:#c62828;border-color:#c62828;" onclick="document.getElementById('memo-text').value=''">メモ削除</button>
+        </div>
+        <div class="memo-textarea-wrap">
+          <textarea id="memo-text" placeholder="自由にメモを入力。環境依存文字（①②等）は使用しないこと。"></textarea>
+        </div>
+      </div>
+
+      <!-- 次へボタン -->
+      <div class="next-area">
+        <button class="btn-next-set" onclick="setAndNext()">情報をセットして次へ ▶</button>
+        <button class="btn-save-only" onclick="saveOnly()">保存のみ</button>
+        <span style="font-size:11px;color:#888;">※自動発信ONの場合、次の顧客へ移動した瞬間にコールが始まります</span>
+      </div>
+
+      <!-- 架電履歴 -->
+      <div class="history-panel">
+        <div class="panel-header"><div class="ph-dot"></div>架電履歴</div>
+        <table class="hist-table">
+          <thead>
+            <tr>
+              <th>架電日時</th><th>担当者</th><th>ステータス</th><th>メモ</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody">
+            <tr><td colspan="4" style="text-align:center;color:#aaa;padding:14px;">架電履歴なし</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div><!-- /call-col -->
+
+    <!-- 右：トークスクリプト -->
+    <div class="script-col">
+      <div class="script-col-header">📄 トークスクリプト</div>
+      <div class="script-body">
+        <div class="script-step active">
+          <div class="script-step-head">① 開口</div>
+          <div class="script-step-body">「お忙しいところ失礼いたします。松代商店の○○と申します。少々お時間よろしいでしょうか？」</div>
+        </div>
+        <div class="script-step">
+          <div class="script-step-head">② 目的説明</div>
+          <div class="script-step-body">「弊社の宅配サービスについてご案内させていただきたいのですが、ご担当の方はいらっしゃいますか？」</div>
+        </div>
+        <div class="script-step">
+          <div class="script-step-head">③ 商品紹介</div>
+          <div class="script-step-body">「現在、地域限定の特別プランをご案内しております。月々○○円から、新鮮な食材を毎週お届けいたします。」</div>
+        </div>
+        <div class="script-step">
+          <div class="script-step-head">④ ニーズ確認</div>
+          <div class="script-step-body">「現在、食材の調達はどちらからされていますか？ご不便を感じている点などはございますか？」</div>
+        </div>
+        <div class="script-step">
+          <div class="script-step-head">⑤ クロージング</div>
+          <div class="script-step-body">「一度、詳しいご説明にお伺いさせていただけませんか？30分ほどお時間をいただければ幸いです。」</div>
+        </div>
+        <div class="script-step">
+          <div class="script-step-head">⑥ 断られた場合</div>
+          <div class="script-step-body">「さようでございますか。またの機会がございましたらよろしくお願いいたします。失礼いたします。」</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /op-call -->
+
+  <!-- ===== マイリストタブ ===== -->
+  <div id="op-mylist" class="hidden" style="padding:14px;background:#f0f2f6;min-height:calc(100vh - 90px);">
+    <div class="admin-panel">
+      <div class="admin-panel-header">
+        マイ架電リスト
+        <button class="btn-sm btn-blue" onclick="showModal('modal-csv')">CSVインポート</button>
+      </div>
+      <div class="admin-panel-body">
+        <table class="admin-table">
+          <thead>
+            <tr><th>リスト名</th><th>総件数</th><th>架電済</th><th>残件数</th><th>進捗</th><th>APT数</th><th>APT率</th><th>最終更新</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Aリスト（宅配エリア）</b></td><td>70件</td><td>23件</td>
+              <td><b style="color:#e65100;">47件</b></td>
+              <td><div class="progress-wrap"><div class="progress-fill" style="width:33%"></div></div> 33%</td>
+              <td>3件</td><td style="color:#2e7d32;font-weight:bold;">13%</td><td>2026/02/24</td>
+            </tr>
+            <tr>
+              <td><b>Bリスト（新規開拓_山口市）</b></td><td>120件</td><td>98件</td>
+              <td><b style="color:#e65100;">22件</b></td>
+              <td><div class="progress-wrap"><div class="progress-fill green" style="width:82%"></div></div> 82%</td>
+              <td>8件</td><td style="color:#2e7d32;font-weight:bold;">8%</td><td>2026/02/23</td>
+            </tr>
+            <tr>
+              <td><b>Cリスト（既存フォロー）</b></td><td>45件</td><td>12件</td>
+              <td><b style="color:#e65100;">33件</b></td>
+              <td><div class="progress-wrap"><div class="progress-fill orange" style="width:27%"></div></div> 27%</td>
+              <td>2件</td><td style="color:#2e7d32;font-weight:bold;">17%</td><td>2026/02/22</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 個人分析タブ ===== -->
+  <div id="op-personal" class="hidden" style="padding:14px;background:#f0f2f6;min-height:calc(100vh - 90px);">
+    <div class="dash-grid" style="margin-bottom:14px;">
+      <div class="dash-card"><div class="dc-label">本日架電数</div><div class="dc-num" style="color:#1c4e8a;">24</div><div class="dc-sub">目標：30件</div></div>
+      <div class="dash-card"><div class="dc-label">サンプル獲得</div><div class="dc-num" style="color:#1565c0;">5</div><div class="dc-sub">APT率 20.8%</div></div>
+      <div class="dash-card"><div class="dc-label">成約</div><div class="dc-num" style="color:#2e7d32;">2</div><div class="dc-sub">今月累計：8件</div></div>
+      <div class="dash-card"><div class="dc-label">接続率</div><div class="dc-num" style="color:#e65100;">58%</div><div class="dc-sub">14/24件接続</div></div>
+    </div>
+    <div class="admin-panel">
+      <div class="admin-panel-header">今月の架電実績（田中 花子）</div>
+      <div class="admin-panel-body" style="font-size:12px;color:#888;text-align:center;padding:24px;">グラフ・詳細分析（Phase2で実装予定）</div>
+    </div>
+  </div>
+
+</div><!-- /screen-operator -->
+
+
+<!-- ========================================================
+     管理者画面
+======================================================== -->
+<div id="screen-admin">
+  <!-- ヘッダー -->
+  <div class="sys-header">
+    <div class="sys-title">📞 テレマシステム｜管理者画面</div>
+    <div class="header-right">
+      <span class="op-name">👑 管理者</span>
+      <button class="btn-logout" onclick="showScreen('login')">ログアウト</button>
+    </div>
+  </div>
+  <!-- タブ -->
+  <div class="tab-bar">
+    <div class="tab-item active" onclick="adminTab(this,'a-dashboard')">ダッシュボード</div>
+    <div class="tab-item" onclick="adminTab(this,'a-lists')">リスト管理</div>
+    <div class="tab-item" onclick="adminTab(this,'a-monitor')">モニタリング</div>
+    <div class="tab-item" onclick="adminTab(this,'a-operators')">オペレーター管理</div>
+    <div class="tab-item" onclick="adminTab(this,'a-analysis')">分析</div>
+    <div class="tab-item" onclick="adminTab(this,'a-script')">スクリプト管理</div>
+  </div>
+
+  <div style="flex:1;background:#f0f2f6;padding:14px;overflow-y:auto;">
+
+    <!-- ===== ダッシュボード ===== -->
+    <div id="a-dashboard">
+      <div class="dash-grid">
+        <div class="dash-card"><div class="dc-label">本日の総架電数</div><div class="dc-num" style="color:#1c4e8a;">148</div><div class="dc-sub">昨日比 +12件</div></div>
+        <div class="dash-card"><div class="dc-label">本日のサンプル獲得</div><div class="dc-num" style="color:#1565c0;">18</div><div class="dc-sub">APT率 12.2%</div></div>
+        <div class="dash-card"><div class="dc-label">稼働中OP</div><div class="dc-num" style="color:#2e7d32;">8</div><div class="dc-sub">登録10名中</div></div>
+        <div class="dash-card"><div class="dc-label">全リスト残件数</div><div class="dc-num" style="color:#e65100;">3,421</div><div class="dc-sub">全5リスト合計</div></div>
+      </div>
+      <div class="admin-panel">
+        <div class="admin-panel-header">リスト別進捗（今月）</div>
+        <div class="admin-panel-body">
+          <table class="admin-table">
+            <thead><tr><th>リスト名</th><th>総件数</th><th>架電済</th><th>残件数</th><th>進捗</th><th>サンプル</th><th>成約</th><th>APT率</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><b>Aリスト（宅配エリア）</b></td><td>5,000</td><td>3,200</td>
+                <td><b style="color:#e65100;">1,800</b></td>
+                <td><div class="progress-wrap"><div class="progress-fill" style="width:64%"></div></div> 64%</td>
+                <td>42</td><td>12</td><td style="color:#2e7d32;font-weight:bold;">1.7%</td>
+              </tr>
+              <tr>
+                <td><b>Bリスト（新規開拓）</b></td><td>8,000</td><td>6,780</td>
+                <td><b style="color:#2e7d32;">1,220</b></td>
+                <td><div class="progress-wrap"><div class="progress-fill green" style="width:85%"></div></div> 85%</td>
+                <td>91</td><td>28</td><td style="color:#2e7d32;font-weight:bold;">1.5%</td>
+              </tr>
+              <tr>
+                <td><b>Cリスト（既存フォロー）</b></td><td>3,000</td><td>2,599</td>
+                <td><b style="color:#e65100;">401</b></td>
+                <td><div class="progress-wrap"><div class="progress-fill orange" style="width:87%"></div></div> 87%</td>
+                <td>155</td><td>62</td><td style="color:#2e7d32;font-weight:bold;">7.1%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== リスト管理 ===== -->
+    <div id="a-lists" class="hidden">
+      <div class="admin-panel">
+        <div class="admin-panel-header">
+          架電リスト管理
+          <div>
+            <button class="btn-sm btn-gray">CSVエクスポート</button>
+            <button class="btn-sm btn-blue" onclick="showModal('modal-csv')">CSVインポート</button>
+          </div>
+        </div>
+        <div class="admin-panel-body">
+          <table class="admin-table">
+            <thead><tr><th>リスト名</th><th>作成日</th><th>総件数</th><th>未架電</th><th>架電済</th><th>サンプル</th><th>成約</th><th>NG</th><th>クレーム</th><th>割当OP</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><b>Aリスト（宅配エリア）</b></td><td>2026/01/10</td><td>5,000</td>
+                <td style="color:#1c4e8a;font-weight:bold;">1,800</td><td>2,900</td>
+                <td style="color:#1565c0;font-weight:bold;">42</td><td style="color:#2e7d32;font-weight:bold;">12</td>
+                <td style="color:#c62828;">258</td><td style="color:#6a1b9a;">5</td>
+                <td>田中・山本</td>
+                <td>
+                  <button class="btn-sm btn-blue">詳細</button>
+                  <button class="btn-sm btn-orange">割当変更</button>
+                  <button class="btn-sm btn-gray">クリーニング</button>
+                </td>
+              </tr>
+              <tr>
+                <td><b>Bリスト（新規開拓）</b></td><td>2026/01/15</td><td>8,000</td>
+                <td style="color:#1c4e8a;font-weight:bold;">1,220</td><td>6,420</td>
+                <td style="color:#1565c0;font-weight:bold;">91</td><td style="color:#2e7d32;font-weight:bold;">28</td>
+                <td style="color:#c62828;">269</td><td style="color:#6a1b9a;">12</td>
+                <td>佐藤・鈴木・高橋</td>
+                <td>
+                  <button class="btn-sm btn-blue">詳細</button>
+                  <button class="btn-sm btn-orange">割当変更</button>
+                  <button class="btn-sm btn-gray">クリーニング</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== モニタリング ===== -->
+    <div id="a-monitor" class="hidden">
+      <div class="admin-panel">
+        <div class="admin-panel-header">リアルタイムモニタリング</div>
+        <div class="admin-panel-body">
+          <div class="monitor-grid">
+            <div class="monitor-op-card">
+              <div class="mop-name">田中 花子</div>
+              <div class="mop-status online">● 架電中</div>
+              <div class="mop-stats">
+                <div class="mop-stat"><div class="n">24</div><div class="l">本日架電</div></div>
+                <div class="mop-stat"><div class="n" style="color:#1565c0;">5</div><div class="l">サンプル</div></div>
+                <div class="mop-stat"><div class="n" style="color:#e65100;">20%</div><div class="l">APT率</div></div>
+              </div>
+            </div>
+            <div class="monitor-op-card">
+              <div class="mop-name">山本 太郎</div>
+              <div class="mop-status online">● 架電中</div>
+              <div class="mop-stats">
+                <div class="mop-stat"><div class="n">19</div><div class="l">本日架電</div></div>
+                <div class="mop-stat"><div class="n" style="color:#1565c0;">2</div><div class="l">サンプル</div></div>
+                <div class="mop-stat"><div class="n" style="color:#e65100;">11%</div><div class="l">APT率</div></div>
+              </div>
+            </div>
+            <div class="monitor-op-card">
+              <div class="mop-name">佐藤 次郎</div>
+              <div class="mop-status offline">○ オフライン</div>
+              <div class="mop-stats">
+                <div class="mop-stat"><div class="n" style="color:#aaa;">-</div><div class="l">本日架電</div></div>
+                <div class="mop-stat"><div class="n" style="color:#aaa;">-</div><div class="l">サンプル</div></div>
+                <div class="mop-stat"><div class="n" style="color:#aaa;">-</div><div class="l">APT率</div></div>
+              </div>
+            </div>
+            <div class="monitor-op-card">
+              <div class="mop-name">鈴木 美咲</div>
+              <div class="mop-status online">● 架電中</div>
+              <div class="mop-stats">
+                <div class="mop-stat"><div class="n">31</div><div class="l">本日架電</div></div>
+                <div class="mop-stat"><div class="n" style="color:#1565c0;">4</div><div class="l">サンプル</div></div>
+                <div class="mop-stat"><div class="n" style="color:#e65100;">13%</div><div class="l">APT率</div></div>
+              </div>
+            </div>
+            <div class="monitor-op-card">
+              <div class="mop-name">高橋 健一</div>
+              <div class="mop-status online">● 架電中</div>
+              <div class="mop-stats">
+                <div class="mop-stat"><div class="n">22</div><div class="l">本日架電</div></div>
+                <div class="mop-stat"><div class="n" style="color:#1565c0;">3</div><div class="l">サンプル</div></div>
+                <div class="mop-stat"><div class="n" style="color:#e65100;">14%</div><div class="l">APT率</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== オペレーター管理 ===== -->
+    <div id="a-operators" class="hidden">
+      <div class="admin-panel">
+        <div class="admin-panel-header">
+          オペレーター管理
+          <button class="btn-sm btn-green" onclick="showModal('modal-addop')">＋ 新規追加</button>
+        </div>
+        <div class="admin-panel-body">
+          <table class="admin-table">
+            <thead><tr><th>ID</th><th>氏名</th><th>権限</th><th>状態</th><th>今月架電</th><th>サンプル</th><th>成約</th><th>APT率</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr><td>1001</td><td><b>田中 花子</b></td><td>OP</td><td style="color:#2e7d32;">● 稼働中</td><td>148</td><td>18</td><td>7</td><td style="color:#2e7d32;">12.2%</td><td><button class="btn-sm btn-blue">編集</button><button class="btn-sm btn-gray">停止</button></td></tr>
+              <tr><td>1002</td><td><b>山本 太郎</b></td><td>OP</td><td style="color:#2e7d32;">● 稼働中</td><td>132</td><td>14</td><td>5</td><td style="color:#2e7d32;">10.6%</td><td><button class="btn-sm btn-blue">編集</button><button class="btn-sm btn-gray">停止</button></td></tr>
+              <tr><td>1003</td><td><b>佐藤 次郎</b></td><td>OP</td><td style="color:#aaa;">○ 停止中</td><td>98</td><td>9</td><td>3</td><td style="color:#aaa;">9.2%</td><td><button class="btn-sm btn-blue">編集</button><button class="btn-sm btn-green">再開</button></td></tr>
+              <tr><td>9001</td><td><b>管理者</b></td><td style="color:#c62828;font-weight:bold;">ADMIN</td><td style="color:#2e7d32;">● 稼働中</td><td>-</td><td>-</td><td>-</td><td>-</td><td><button class="btn-sm btn-blue">編集</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 分析 ===== -->
+    <div id="a-analysis" class="hidden">
+      <div class="dash-grid">
+        <div class="dash-card"><div class="dc-label">今月総架電数</div><div class="dc-num" style="color:#1c4e8a;">3,210</div></div>
+        <div class="dash-card"><div class="dc-label">総サンプル獲得</div><div class="dc-num" style="color:#1565c0;">288</div></div>
+        <div class="dash-card"><div class="dc-label">総成約数</div><div class="dc-num" style="color:#2e7d32;">102</div></div>
+        <div class="dash-card"><div class="dc-label">総APT率</div><div class="dc-num" style="color:#e65100;">9.0%</div></div>
+      </div>
+      <div class="admin-panel">
+        <div class="admin-panel-header">ステータス割合 / エリアマーケティング / 架電時間帯分析</div>
+        <div class="admin-panel-body" style="font-size:12px;color:#aaa;text-align:center;padding:28px;">グラフ・詳細分析（Phase2で実装予定）</div>
+      </div>
+    </div>
+
+    <!-- ===== スクリプト管理 ===== -->
+    <div id="a-script" class="hidden">
+      <div class="admin-panel">
+        <div class="admin-panel-header">トークスクリプト管理</div>
+        <div class="admin-panel-body">
+          <div style="display:grid;grid-template-columns:190px 1fr;gap:14px;">
+            <div>
+              <div style="font-size:11px;color:#888;margin-bottom:6px;font-weight:bold;">スクリプト一覧</div>
+              <div style="border:1px solid #d0d4dc;border-radius:5px;overflow:hidden;font-size:12px;">
+                <div style="background:#1c4e8a;color:#fff;padding:8px 12px;">標準トーク（宅配）</div>
+                <div style="padding:8px 12px;border-bottom:1px solid #eee;cursor:pointer;color:#555;">新規開拓トーク</div>
+                <div style="padding:8px 12px;cursor:pointer;color:#555;">既存フォロートーク</div>
+              </div>
+              <button class="btn-sm btn-blue" style="width:100%;margin-top:8px;padding:7px;">＋ 新規作成</button>
+            </div>
+            <div>
+              <div style="font-size:11px;color:#888;margin-bottom:6px;font-weight:bold;">編集：標準トーク（宅配）</div>
+              <div class="form-row"><label>ステップ①：開口</label><textarea style="height:55px;">お忙しいところ失礼いたします。松代商店の○○と申します。少々お時間よろしいでしょうか？</textarea></div>
+              <div class="form-row"><label>ステップ②：目的説明</label><textarea style="height:55px;">弊社の宅配サービスについてご案内させていただきたいのですが、ご担当の方はいらっしゃいますか？</textarea></div>
+              <div class="form-row"><label>ステップ③：商品紹介</label><textarea style="height:55px;">現在、地域限定の特別プランをご案内しております。月々○○円から、新鮮な食材を毎週お届けいたします。</textarea></div>
+              <button class="btn-sm btn-blue" style="padding:8px 18px;" onclick="showToast('スクリプトを保存しました')">保存</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /admin content -->
+</div><!-- /screen-admin -->
+
+
+<!-- ========================================================
+     モーダル：CSVインポート
+======================================================== -->
+<div id="modal-csv" class="modal-bg hidden">
+  <div class="modal-box">
+    <h3>📂 CSVインポート</h3>
+    <div class="form-row"><label>リスト名</label><input type="text" placeholder="例：Aリスト（宅配エリア）" /></div>
+    <div class="form-row"><label>CSVファイル選択</label><input type="file" accept=".csv" /></div>
+    <div style="background:#f5f7ff;padding:10px;border-radius:4px;font-size:11px;color:#666;margin-bottom:4px;">
+      フォーマット：会社名, 担当者名, 電話番号①, 電話番号②, 住所, エリア, リスト名<br>
+      ※1行目はヘッダー行。電話番号の先頭の0が消えていないか要確認。
+    </div>
+    <div class="modal-btns">
+      <button class="btn-sm btn-gray" style="padding:8px 16px;" onclick="closeModal('modal-csv')">キャンセル</button>
+      <button class="btn-sm btn-blue" style="padding:8px 16px;" onclick="closeModal('modal-csv');showToast('CSVをインポートしました（デモ）')">インポート実行</button>
+    </div>
+  </div>
+</div>
+
+<!-- モーダル：オペレーター追加 -->
+<div id="modal-addop" class="modal-bg hidden">
+  <div class="modal-box">
+    <h3>👤 オペレーター新規追加</h3>
+    <div class="form-row"><label>氏名</label><input type="text" placeholder="例：山田 太郎" /></div>
+    <div class="form-row"><label>ログインID（数字）</label><input type="text" placeholder="例：1005" /></div>
+    <div class="form-row"><label>パスワード（10桁以内の数字）</label><input type="password" placeholder="例：19900101" /></div>
+    <div class="form-row"><label>権限</label><select><option>オペレーター</option><option>所属管理者</option></select></div>
+    <div class="modal-btns">
+      <button class="btn-sm btn-gray" style="padding:8px 16px;" onclick="closeModal('modal-addop')">キャンセル</button>
+      <button class="btn-sm btn-green" style="padding:8px 16px;" onclick="closeModal('modal-addop');showToast('オペレーターを追加しました')">追加</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ===== サンプルデータ =====
+const listData = {
+  A: { remain:47, done:23, apt:3 },
+  B: { remain:22, done:98, apt:8 },
+  C: { remain:33, done:12, apt:2 },
+};
+
+const customers = [
+  { name:'株式会社 山口食品',    contact:'田中 部長', tel:'083-920-XXXX', tel2:'-',           addr:'山口市中市町2-1',  area:'山口市', list:'Aリスト', code:'A00001', calls:0, lastCall:'-', status:'未架電' },
+  { name:'有限会社 萩商事',      contact:'鈴木 様',   tel:'0838-22-XXXX', tel2:'090-XXXX-XXXX', addr:'萩市江向1-1',      area:'萩市',   list:'Aリスト', code:'A00002', calls:3, lastCall:'2026/02/20', status:'不在3回目' },
+  { name:'個人 山田商店',        contact:'山田 様',   tel:'083-941-XXXX', tel2:'-',           addr:'山口市小郡上郷5-1',area:'山口市', list:'Aリスト', code:'A00003', calls:1, lastCall:'2026/02/18', status:'サンプル' },
+  { name:'宇部水産株式会社',     contact:'佐藤 課長', tel:'0836-31-XXXX', tel2:'-',           addr:'宇部市常盤町1-1',  area:'宇部市', list:'Aリスト', code:'A00004', calls:1, lastCall:'2026/02/21', status:'不在1回目' },
+  { name:'下関デリカ有限会社',   contact:'高橋 様',   tel:'083-222-XXXX', tel2:'-',           addr:'下関市一の宮住吉1',area:'下関市', list:'Bリスト', code:'B00001', calls:2, lastCall:'2026/02/19', status:'不要' },
+  { name:'防府物産株式会社',     contact:'伊藤 代表', tel:'0835-21-XXXX', tel2:'-',           addr:'防府市駅前通1-1',  area:'防府市', list:'Aリスト', code:'A00005', calls:0, lastCall:'-', status:'未架電' },
+  { name:'長門フーズ',           contact:'渡辺 様',   tel:'0837-22-XXXX', tel2:'-',           addr:'長門市東深川1-1',  area:'長門市', list:'Bリスト', code:'B00002', calls:2, lastCall:'2026/02/22', status:'不在2回目' },
+  { name:'岩国青果株式会社',     contact:'中村 部長', tel:'0827-43-XXXX', tel2:'-',           addr:'岩国市麻里布町1-1',area:'岩国市', list:'Cリスト', code:'C00001', calls:0, lastCall:'-', status:'未架電' },
+];
+
+const cMemos = {
+  c1: '他明治をとっている',
+  c2: '他商品、もしくはメーカーでとっている',
+  c3: '妻、夫不在',
+  c4: '仕事中で対応不可',
+};
+
+const tagMap = {
+  '未架電':   'tag-new',
+  'サンプル': 'tag-sample',
+  '成約':     'tag-contract',
+  '不在1回目':'tag-absent',
+  '不在2回目':'tag-absent',
+  '不在3回目':'tag-absent',
+  '不要':     'tag-ng',
+  'クレーム': 'tag-claim',
+  '不通':     'tag-ng',
+  '要対応':   'tag-absent',
+  'クロージングNG':'tag-ng',
+};
+
+let currentIdx = 0;
+let callHistories = Array.from({length: customers.length}, ()=>[]);
+let selectedStatus = '';
+
+// ===== 画面表示 =====
+function showScreen(name) {
+  document.getElementById('screen-login').style.display = 'none';
+  document.getElementById('screen-operator').style.display = 'none';
+  document.getElementById('screen-admin').style.display = 'none';
+  const s = document.getElementById('screen-' + name);
+  if (s) s.style.display = (name === 'login') ? 'flex' : 'flex';
+  if (name === 'operator') { s.style.flexDirection = 'column'; renderList(); loadCust(0); }
+  if (name === 'admin')    { s.style.flexDirection = 'column'; }
+}
+
+function doLogin() {
+  const id = document.getElementById('login-id').value.trim();
+  const pw = document.getElementById('login-pw').value.trim();
+  if (pw !== '1234') { alert('パスワードが違います\n（デモ：1234）'); return; }
+  if (id === 'admin') showScreen('admin');
+  else showScreen('operator');
+}
+
+// ===== オペレータータブ =====
+function opTab(el, id) {
+  document.querySelectorAll('#screen-operator .tab-bar .tab-item').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['op-call','op-mylist','op-personal'].forEach(s=>{
+    const e = document.getElementById(s);
+    if(e) e.classList.toggle('hidden', s!==id);
+  });
+}
+
+// ===== 管理者タブ =====
+function adminTab(el, id) {
+  document.querySelectorAll('#screen-admin .tab-bar .tab-item').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['a-dashboard','a-lists','a-monitor','a-operators','a-analysis','a-script'].forEach(s=>{
+    const e = document.getElementById(s);
+    if(e) e.classList.toggle('hidden', s!==id);
+  });
+}
+
+// ===== 顧客リスト描画 =====
+function renderList() {
+  const container = document.getElementById('customer-list');
+  container.innerHTML = customers.map((c,i)=>{
+    const tagClass = tagMap[c.status] || 'tag-new';
+    return `<div class="cust-row${i===currentIdx?' active':''}" onclick="clickCust(this,${i})">
+      <div class="cr-name">${c.name}</div>
+      <div class="cr-tel">${c.tel}　${c.contact}</div>
+      <div class="cr-tags"><span class="tag ${tagClass}">${c.status}</span>
+      ${c.calls>0?`<span class="tag tag-absent">${c.calls}回架電</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function clickCust(el, idx) {
+  document.querySelectorAll('.cust-row').forEach(r=>r.classList.remove('active'));
+  el.classList.add('active');
+  loadCust(idx);
+}
+
+function loadCust(idx) {
+  currentIdx = idx;
+  const c = customers[idx];
+  document.getElementById('ci-name').textContent    = c.name;
+  document.getElementById('ci-contact').textContent = c.contact;
+  document.getElementById('ci-tel').textContent     = c.tel;
+  document.getElementById('ci-tel2').textContent    = c.tel2;
+  document.getElementById('ci-address').textContent = c.addr;
+  document.getElementById('ci-area').textContent    = c.area;
+  document.getElementById('ci-list').textContent    = `松代商店 / ${c.list}`;
+  document.getElementById('ci-code').textContent    = c.code;
+  document.getElementById('ci-calls').textContent   = c.calls;
+  document.getElementById('ci-status').textContent  = c.status;
+  document.getElementById('last-call-date').textContent = c.lastCall;
+  document.getElementById('ctrl-tel').textContent   = c.tel;
+  document.getElementById('ctrl-status').textContent = '許可';
+  document.getElementById('memo-text').value = '';
+  selectedStatus = '';
+  document.querySelectorAll('.status-btn').forEach(b=>b.classList.remove('selected'));
+  renderHistory(idx);
+}
+
+// ===== ステータス選択 =====
+function selectStatus(el, st) {
+  document.querySelectorAll('.status-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedStatus = st;
+}
+
+// ===== 発信・終話 =====
+function startCall() {
+  document.getElementById('ctrl-status').textContent = '発信中...';
+  setTimeout(()=>{
+    document.getElementById('ctrl-status').textContent = '通話中';
+  }, 1200);
+}
+function endCall() {
+  document.getElementById('ctrl-status').textContent = '許可';
+}
+
+// ===== 情報をセットして次へ =====
+function setAndNext() {
+  if (!selectedStatus) { showToast('ステータスを選択してください'); return; }
+  saveRecord();
+  const next = (currentIdx + 1) % customers.length;
+  loadCust(next);
+  const rows = document.querySelectorAll('.cust-row');
+  rows.forEach(r=>r.classList.remove('active'));
+  if (rows[next]) rows[next].classList.add('active');
+  if (document.getElementById('auto-call').checked) {
+    setTimeout(()=>{ document.getElementById('ctrl-status').textContent = '発信中...'; }, 300);
+    setTimeout(()=>{ document.getElementById('ctrl-status').textContent = '通話中'; }, 1500);
+  }
+  showToast('記録しました。次の顧客へ移動しました。');
+  renderList();
+}
+
+function saveOnly() {
+  if (!selectedStatus) { showToast('ステータスを選択してください'); return; }
+  saveRecord();
+  showToast('保存しました（同じ顧客のまま）');
+  renderList();
+}
+
+function saveRecord() {
+  const now = new Date();
+  const ds = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const memo = document.getElementById('memo-text').value || '-';
+  customers[currentIdx].calls++;
+  customers[currentIdx].status   = selectedStatus;
+  customers[currentIdx].lastCall = ds.split(' ')[0];
+  callHistories[currentIdx].unshift({ date:ds, op:'田中 花子', status:selectedStatus, memo });
+  document.getElementById('ci-calls').textContent  = customers[currentIdx].calls;
+  document.getElementById('ci-status').textContent = selectedStatus;
+  document.getElementById('last-call-date').textContent = customers[currentIdx].lastCall;
+  renderHistory(currentIdx);
+}
+
+function nextCust() {
+  const next = (currentIdx + 1) % customers.length;
+  loadCust(next);
+  const rows = document.querySelectorAll('.cust-row');
+  rows.forEach(r=>r.classList.remove('active'));
+  if (rows[next]) rows[next].classList.add('active');
+}
+
+// ===== 架電履歴描画 =====
+function renderHistory(idx) {
+  const tbody = document.getElementById('history-tbody');
+  const rows  = callHistories[idx];
+  if (!rows || rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:12px;">架電履歴なし</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r=>
+    `<tr><td>${r.date}</td><td>${r.op}</td><td><b>${r.status}</b></td><td>${r.memo}</td></tr>`
+  ).join('');
+}
+
+// ===== リスト切替 =====
+function changeList(sel) {
+  const s = listData[sel.value] || {remain:0,done:0,apt:0};
+  document.getElementById('s-remain').textContent = s.remain;
+  document.getElementById('s-done').textContent   = s.done;
+  document.getElementById('s-apt').textContent    = s.apt;
+}
+
+// ===== Cメモ / 日付挿入 =====
+function insertMemo(type) {
+  const ta = document.getElementById('memo-text');
+  const now = new Date();
+  const ds = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日${now.getHours()}時${now.getMinutes()}分`;
+  const inserts = { date:ds, op:'田中花子', c1:cMemos.c1, c2:cMemos.c2, c3:cMemos.c3, c4:cMemos.c4 };
+  ta.value += (ta.value ? '　' : '') + (inserts[type]||'');
+}
+
+// ===== 情報2タブ =====
+function info2tab(el, id) {
+  document.querySelectorAll('.info2-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['i2-main','i2-order','i2-research'].forEach(s=>{
+    document.getElementById(s).classList.toggle('hidden', s!==id);
+  });
+}
+
+// ===== モーダル =====
+function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id){ document.getElementById(id).classList.add('hidden'); }
+document.querySelectorAll('.modal-bg').forEach(m=>{
+  m.addEventListener('click', e=>{ if(e.target===m) m.classList.add('hidden'); });
+});
+
+// ===== トースト =====
+function showToast(msg) {
+  const old = document.querySelector('.toast');
+  if (old) old.remove();
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2500);
+}
+
+// ===== 初期化 =====
+showScreen('login');
+</script>
+</body>
+</html>
